@@ -1,7 +1,5 @@
-## NAVICA: A Smart Agentic AI for Next-Gen Careers 🚀
-
 <p align="center">
-<img src="https://img.icons8.com/bubbles/100/000000/artificial-intelligence.png" alt="NAVICA Logo" width="120"/>
+<img src="https://github.com/Harshh212/Navica/blob/main/NAVICA%20LOGO.png?raw=true" alt="NAVICA Logo" width="150"/>
 <h1 align="center">NAVICA 🚀</h1>
 <p align="center">
 <strong>A Smart Agentic AI for Next-Gen Careers</strong><br>

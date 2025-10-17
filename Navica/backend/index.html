@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAVICA - AI Job Search Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .tagline {
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .step {
+            display: none;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s;
+        }
+        
+        .step-dot.active {
+            background: #667eea;
+            width: 40px;
+            border-radius: 6px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+        
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .skill-tag {
+            background: #f0f3ff;
+            color: #667eea;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .role-checkbox {
+            display: none;
+        }
+        
+        .role-label {
+            display: block;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .role-checkbox:checked + .role-label {
+            border-color: #667eea;
+            background: #f0f3ff;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .role-label:hover {
+            border-color: #667eea;
+        }
+        
+        .job-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .job-card:hover {
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+        
+        .job-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .job-company {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .job-location {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .skills-section {
+            margin: 15px 0;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .matched-skills {
+            color: #10b981;
+        }
+        
+        .missing-skills {
+            color: #ef4444;
+        }
+        
+        .suggestion {
+            background: #f0f3ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">NAVICA</div>
+            <div class="tagline">Navigate Your Career with AI</div>
+        </div>
+        
+        <div class="step-indicator">
+            <div class="step-dot active" data-step="1"></div>
+            <div class="step-dot" data-step="2"></div>
+            <div class="step-dot" data-step="3"></div>
+        </div>
+        
+        <!-- Step 1: Upload Resume -->
+        <div class="step active" id="step1">
+            <h2 style="margin-bottom: 20px; color: #333;">Upload Your Resume</h2>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📄</div>
+                <h3>Drag & Drop your resume here</h3>
+                <p style="color: #999; margin: 10px 0;">or click to browse</p>
+                <p style="color: #999; font-size: 14px;">PDF format only</p>
+                <input type="file" id="fileInput" accept=".pdf">
+            </div>
+            <div id="uploadStatus"></div>
+            <button id="analyzeBtn" disabled>Analyze Resume</button>
+        </div>
+        
+        <!-- Step 2: Review Skills & Select Roles -->
+        <div class="step" id="step2">
+            <h2 style="margin-bottom: 20px; color: #333;">Your Skills</h2>
+            <div class="skills-list" id="skillsList"></div>
+            
+            <h2 style="margin: 30px 0 20px; color: #333;">Select Job Roles</h2>
+            <p style="color: #666; margin-bottom: 20px;">Choose one or more roles you're interested in:</p>
+            <div class="roles-grid" id="rolesGrid"></div>
+            
+            <button id="searchBtn" disabled>Search Jobs</button>
+        </div>
+        
+        <!-- Step 3: View Results -->
+        <div class="step" id="step3">
+            <h2 style="margin-bottom: 20px; color: #333;">Job Matches</h2>
+            <div id="results"></div>
+            <button onclick="location.reload()">Start Over</button>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let uploadedFile = null;
+        let extractedSkills = [];
+        let availableRoles = [];
+        let selectedRoles = [];
+        
+        // Step 1: File Upload
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const uploadStatus = document.getElementById('uploadStatus');
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                uploadedFile = file;
+                showFileSelected(file);
+            } else {
+                showError('Please upload a PDF file');
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                uploadedFile = file;
+                showFileSelected(file);
+            }
+        });
+        
+        function showFileSelected(file) {
+            uploadStatus.innerHTML = `<div class="success">✓ ${file.name} selected</div>`;
+            analyzeBtn.disabled = false;
+        }
+        
+        analyzeBtn.addEventListener('click', async () => {
+            if (!uploadedFile) return;
+            
+            analyzeBtn.disabled = true;
+            uploadStatus.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analyzing your resume...</p></div>';
+            
+            const formData = new FormData();
+            formData.append('resume_file', uploadedFile);
+            
+            try {
+                const response = await fetch(`${API_URL}/api/v1/analyze_resume`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to analyze resume');
+                }
+                
+                const data = await response.json();
+                extractedSkills = data.extracted_skills;
+                availableRoles = data.available_roles;
+                
+                goToStep(2);
+                displaySkills();
+                displayRoles();
+            } catch (error) {
+                uploadStatus.innerHTML = `<div class="error">Error: ${error.message}. Make sure the server is running on ${API_URL}</div>`;
+                analyzeBtn.disabled = false;
+            }
+        });
+        
+        // Step 2: Display Skills and Roles
+        function displaySkills() {
+            const skillsList = document.getElementById('skillsList');
+            skillsList.innerHTML = extractedSkills.map(skill => 
+                `<div class="skill-tag">${skill}</div>`
+            ).join('');
+        }
+        
+        function displayRoles() {
+            const rolesGrid = document.getElementById('rolesGrid');
+            rolesGrid.innerHTML = availableRoles.map(role => 
+                `<div>
+                    <input type="checkbox" class="role-checkbox" id="role-${role}" value="${role}">
+                    <label class="role-label" for="role-${role}">${role}</label>
+                </div>`
+            ).join('');
+            
+            document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedRoles);
+            });
+        }
+        
+        function updateSelectedRoles() {
+            selectedRoles = Array.from(document.querySelectorAll('.role-checkbox:checked'))
+                .map(cb => cb.value);
+            document.getElementById('searchBtn').disabled = selectedRoles.length === 0;
+        }
+        
+        document.getElementById('searchBtn').addEventListener('click', async () => {
+            if (selectedRoles.length === 0) return;
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Searching for jobs and analyzing matches...</p></div>';
+            goToStep(3);
+            
+            try {
+                const response = await fetch(`${API_URL}/api/v1/search_and_analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_skills: extractedSkills,
+                        selected_roles: selectedRoles
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to search jobs');
+                }
+                
+                const jobs = await response.json();
+                displayResults(jobs);
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        });
+        
+        // Step 3: Display Results
+        function displayResults(jobs) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (jobs.length === 0) {
+                resultsDiv.innerHTML = '<p>No jobs found. Try selecting different roles.</p>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = jobs.map(job => `
+                <div class="job-card">
+                    <div class="job-header">
+                        <div>
+                            <div class="job-title">${job.job_details.title}</div>
+                            <div class="job-company">${job.job_details.company}</div>
+                            <div class="job-location">📍 ${job.job_details.location}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="skills-section">
+                        <div class="section-title matched-skills">✓ Matched Skills</div>
+                        <div class="skills-list">
+                            ${job.analysis.matched_skills.map(skill => 
+                                `<div class="skill-tag" style="background: #d1fae5; color: #10b981;">${skill}</div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="skills-section">
+                        <div class="section-title missing-skills">○ Skills to Develop</div>
+                        <div class="skills-list">
+                            ${job.analysis.missing_skills.map(skill => 
+                                `<div class="skill-tag" style="background: #fee2e2; color: #ef4444;">${skill}</div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="suggestion">
+                        <strong>💡 AI Advice:</strong><br>
+                        ${job.analysis.improvement_suggestion}
+                    </div>
+                    
+                    <button onclick="window.open('${job.job_details.external_url}', '_blank')" 
+                            style="width: auto; margin-top: 15px; padding: 10px 20px;">
+                        View Job Posting →
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        function goToStep(step) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.step-dot').forEach(dot => dot.classList.remove('active'));
+            
+            document.getElementById(`step${step}`).classList.add('active');
+            document.querySelector(`.step-dot[data-step="${step}"]`).classList.add('active');
+        }
+        
+        function showError(message) {
+            uploadStatus.innerHTML = `<div class="error">${message}</div>`;
+        }
+    </script>
+</body>
+</html>

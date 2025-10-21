@@ -10,35 +10,53 @@ import io
 SKILLS_LIST = [
     # Programming Languages
     "python", "java", "javascript", "typescript", "c++", "c#", "ruby", "php", 
-    "swift", "kotlin", "go", "rust", "scala", "r", "matlab", "sql",
+    "swift", "kotlin", "go", "rust", "scala", "r", "matlab", "sql", "perl",
+    "objective-c", "dart", "haskell", "shell", "powershell", "vba",
     
     # Web Development
     "html", "css", "react", "angular", "vue", "node.js", "express", "django", 
     "flask", "fastapi", "spring boot", "asp.net", "next.js", "nuxt.js",
+    "jquery", "bootstrap", "tailwind", "sass", "webpack", "vite", "redux",
+    "graphql", "rest api", "soap", "websockets", "laravel", "rails",
     
     # Mobile Development
-    "android", "ios", "react native", "flutter", "xamarin",
+    "android", "ios", "react native", "flutter", "xamarin", "ionic",
+    "swift ui", "jetpack compose",
     
     # Data Science & ML
     "machine learning", "deep learning", "tensorflow", "pytorch", "keras", 
     "scikit-learn", "pandas", "numpy", "data analysis", "data visualization",
-    "nlp", "computer vision", "neural networks",
+    "nlp", "computer vision", "neural networks", "spark", "hadoop", "tableau",
+    "power bi", "matplotlib", "seaborn", "jupyter", "r studio", "statistics",
+    "ai", "artificial intelligence", "llm", "generative ai", "openai", "hugging face",
     
     # Cloud & DevOps
     "aws", "azure", "google cloud", "gcp", "docker", "kubernetes", "jenkins",
-    "ci/cd", "terraform", "ansible", "linux", "bash", "git", "github",
+    "ci/cd", "terraform", "ansible", "linux", "bash", "git", "github", "gitlab",
+    "bitbucket", "circleci", "travis ci", "github actions", "cloudformation",
+    "vagrant", "chef", "puppet", "nginx", "apache", "prometheus", "grafana",
     
     # Databases
     "mysql", "postgresql", "mongodb", "redis", "elasticsearch", "oracle",
-    "sql server", "cassandra", "dynamodb",
+    "sql server", "cassandra", "dynamodb", "sqlite", "mariadb", "neo4j",
+    "firebase", "supabase", "prisma", "sequelize", "typeorm",
     
     # Other Technical Skills
     "rest api", "graphql", "microservices", "agile", "scrum", "jira",
-    "unit testing", "integration testing", "tdd", "oauth", "jwt",
+    "unit testing", "integration testing", "tdd", "oauth", "jwt", "saml",
+    "api design", "system design", "oop", "design patterns", "algorithms",
+    "data structures", "debugging", "troubleshooting", "performance optimization",
+    "security", "authentication", "authorization", "encryption", "compliance",
+    "version control", "code review", "documentation", "technical writing",
+    
+    # Frontend/Backend
+    "frontend", "backend", "full stack", "ui/ux", "responsive design",
+    "cross-browser", "accessibility", "seo", "cms", "wordpress", "shopify",
     
     # Soft Skills
     "leadership", "communication", "problem solving", "teamwork", 
-    "project management", "critical thinking"
+    "project management", "critical thinking", "time management",
+    "collaboration", "mentoring", "presentation", "analytical"
 ]
 
 # Global variables for NLP components

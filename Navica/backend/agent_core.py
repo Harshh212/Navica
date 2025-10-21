@@ -15,13 +15,14 @@ def fetch_jobs_with_jobspy(user_skills: list[str], selected_roles: list[str]) ->
     skills_query = " OR ".join(user_skills)
     search_term = f"({roles_query}) AND ({skills_query})"
     # 2. Define the job sites to scrape (removed zip_recruiter due to rate limiting)
-    job_sites = ["indeed", "google"] 
+    job_sites = ["indeed", "google"]
     try:
         # 3. Call the JobSpy scraper (synchronous)
         jobs_df = scrape_jobs(
             site_name=job_sites,
             search_term=search_term,
-            location="Remote, United States", 
+            location = "India",
+            country_indeed="India",
             results_wanted=15,
             hours_old=72, # Filter to jobs posted in the last 72 hours
         )

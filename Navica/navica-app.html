@@ -341,7 +341,8 @@
     </div>
     
     <script>
-        const API_URL = 'http://localhost:8000';
+        // Try both localhost and 127.0.0.1 for better compatibility
+        const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'http://127.0.0.1:8000';
         let uploadedFile = null;
         let extractedSkills = [];
         let availableRoles = [];
@@ -421,7 +422,17 @@
                     displayRoles();
                 }, 1000);
             } catch (error) {
-                uploadStatus.innerHTML = `<div class="error">❌ Error: ${error.message}<br><br>Make sure the NAVICA backend server is running on ${API_URL}<br>Run: <code>uvicorn app:app --host 127.0.0.1 --port 8000</code></div>`;
+                // Check if it's a network error (server not reachable)
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    uploadStatus.innerHTML = `<div class="error">❌ Cannot connect to server<br><br>
+                        Make sure the NAVICA backend is running:<br>
+                        1. Open terminal in backend folder<br>
+                        2. Run: <code>python app.py</code><br>
+                        3. Server should start on http://127.0.0.1:8000<br><br>
+                        Currently trying to connect to: ${API_URL}</div>`;
+                } else {
+                    uploadStatus.innerHTML = `<div class="error">❌ ${error.message}</div>`;
+                }
                 analyzeBtn.disabled = false;
             }
         });

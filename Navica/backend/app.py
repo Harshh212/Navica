@@ -137,10 +137,20 @@ async def analyze_resume(resume_file: UploadFile = File(...)):
         extracted_skills = extract_key_skills(resume_text)
         
         if not extracted_skills:
-            raise HTTPException(
-                status_code=400,
-                detail="Could not identify any recognizable skills in the resume. Please ensure your resume includes technical skills."
-            )
+            # Check if document looks like a resume (contains common resume keywords)
+            resume_keywords = ['experience', 'education', 'skills', 'work', 'project', 'job', 'position']
+            has_resume_keywords = any(keyword in resume_text.lower() for keyword in resume_keywords)
+            
+            if not has_resume_keywords:
+                raise HTTPException(
+                    status_code=400,
+                    detail="This doesn't appear to be a resume. Please upload a valid resume/CV document with your professional experience and skills."
+                )
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not identify any technical skills in the document. Please ensure your resume includes skills like programming languages, frameworks, tools, etc."
+                )
         
         logger.info(f"Extracted {len(extracted_skills)} skills: {extracted_skills}")
         

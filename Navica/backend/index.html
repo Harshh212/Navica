@@ -331,7 +331,8 @@
     </div>
     
     <script>
-        const API_URL = 'http://localhost:8000';
+        // Use 127.0.0.1 since that's what the server binds to
+        const API_URL = 'http://127.0.0.1:8000';
         let uploadedFile = null;
         let extractedSkills = [];
         let availableRoles = [];
@@ -395,18 +396,32 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Failed to analyze resume');
+                    const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
+                    throw new Error(errorData.detail || 'Failed to analyze resume');
                 }
                 
                 const data = await response.json();
                 extractedSkills = data.extracted_skills;
                 availableRoles = data.available_roles;
                 
-                goToStep(2);
-                displaySkills();
-                displayRoles();
+                uploadStatus.innerHTML = `<div class="success">✓ Found ${extractedSkills.length} skills in your resume!</div>`;
+                
+                setTimeout(() => {
+                    goToStep(2);
+                    displaySkills();
+                    displayRoles();
+                }, 1000);
             } catch (error) {
-                uploadStatus.innerHTML = `<div class="error">Error: ${error.message}. Make sure the server is running on ${API_URL}</div>`;
+                // Check if it's a network/connection error
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('TypeError')) {
+                    uploadStatus.innerHTML = `<div class="error">❌ Cannot connect to server<br><br>
+                        The backend server appears to be running, but there might be a connection issue.<br>
+                        Current API URL: <code>${API_URL}</code><br><br>
+                        Try refreshing the page (Ctrl+F5)</div>`;
+                } else {
+                    // Show the actual error message from the backend
+                    uploadStatus.innerHTML = `<div class="error">❌ ${error.message}</div>`;
+                }
                 analyzeBtn.disabled = false;
             }
         });

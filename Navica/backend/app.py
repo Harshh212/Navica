@@ -5,6 +5,11 @@ from fastapi.staticfiles import StaticFiles
 from typing import List
 import logging
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Import models and modules
 from models import (
@@ -223,10 +228,11 @@ async def search_and_analyze(params: JobSearchParams):
             logger.info(f"Analyzing job {idx}/{len(job_postings)}: {job.title}")
             
             try:
-                # Agent Action: LLM analysis for this job
+                # Agent Action: LLM analysis for this job using FREE Gemini AI
                 analysis = await analyze_job_and_resume(
                     job_desc=job.job_description,
-                    user_skills=params.user_skills
+                    user_skills=params.user_skills,
+                    job_title=job.title
                 )
                 
                 # Combine job details and analysis

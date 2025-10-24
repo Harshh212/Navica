@@ -3,6 +3,8 @@ from typing import List
 from jobspy import scrape_jobs
 import pandas as pd # Required by JobSpy
 from models import JobPosting, SkillAnalysis
+import os
+import google.generativeai as genai
 
 def fetch_jobs_with_jobspy(user_skills: list[str], selected_roles: list[str]) -> list[JobPosting]:
     """
@@ -23,7 +25,7 @@ def fetch_jobs_with_jobspy(user_skills: list[str], selected_roles: list[str]) ->
             search_term=search_term,
             location = "India",
             country_indeed="India",
-            results_wanted=15,
+            results_wanted=5,
             hours_old=72, # Filter to jobs posted in the last 72 hours
         )
     except Exception as e:
@@ -458,14 +460,73 @@ async def _get_filtered_mock_jobs(roles: List[str]) -> List[JobPosting]:
     return filtered_jobs
 
 
-async def analyze_job_and_resume(job_desc: str, user_skills: List[str]) -> SkillAnalysis:
+def generate_gemini_improvement_suggestion(
+    user_skills: List[str], 
+    matched_skills: List[str], 
+    missing_skills: List[str],
+    job_title: str = "this position"
+) -> str:
+    """
+    Uses Google Gemini (FREE) to generate personalized career improvement suggestions.
+    
+    Args:
+        user_skills: All skills the user has
+        matched_skills: Skills that match the job requirements
+        missing_skills: Skills the user is missing for the job
+        job_title: The job title for context
+        
+    Returns:
+        Detailed improvement suggestion from Gemini AI (FREE)
+    """
+    try:
+        # Get Gemini API key from environment (FREE - no credit card needed)
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            print("⚠️  Gemini API key not found, falling back to rule-based suggestions")
+            return None
+        
+        # Configure Gemini
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')  # Latest stable Gemini model (FREE and FAST)
+        
+        # Prepare the prompt for Gemini
+        prompt = f"""You are a career advisor helping a job seeker improve their profile for a job position.
+
+Job Title: {job_title}
+
+Candidate's Skills: {', '.join(user_skills)}
+Matched Skills (skills they have that the job needs): {', '.join(matched_skills) if matched_skills else 'None'}
+Missing Skills (skills the job requires that they lack): {', '.join(missing_skills) if missing_skills and missing_skills[0] != 'No critical gaps identified' else 'None'}
+
+Generate a personalized, actionable, and encouraging improvement suggestion for this candidate in 3-4 sentences. The suggestion should:
+1. Acknowledge their strengths (matched skills)
+2. Provide specific, practical advice on how to develop missing skills
+3. Suggest resources or learning paths (courses, projects, certifications)
+4. Be motivating and realistic
+
+Keep it concise, professional, and focused on actionable next steps."""
+
+        # Call Gemini API (FREE)
+        print("🤖 Calling Google Gemini (FREE) for personalized suggestion...")
+        response = model.generate_content(prompt)
+        
+        suggestion = response.text.strip()
+        print(f"✓ Gemini suggestion generated ({len(suggestion)} chars)")
+        return suggestion
+        
+    except Exception as e:
+        print(f"❌ Gemini generation failed: {str(e)}")
+        return None
+
+
+async def analyze_job_and_resume(job_desc: str, user_skills: List[str], job_title: str = "") -> SkillAnalysis:
     """
     Analyzes the match between a job description and user skills using NLP-based skill extraction.
     
     AGENTIC BEHAVIOR:
     1. Perception: Extracts required skills from job description using spaCy NLP
     2. Reasoning: Compares job requirements with candidate skills
-    3. Action: Generates personalized improvement recommendations
+    3. Action: Generates personalized improvement recommendations using FREE Gemini AI
     
     Args:
         job_desc: The job description text
@@ -506,20 +567,33 @@ async def analyze_job_and_resume(job_desc: str, user_skills: List[str]) -> Skill
     matched_final = matched[:8] if matched else user_skills[:3]
     missing_final = missing[:8] if missing else ["No critical gaps identified"]
     
-    # Step 4: ACTION - Generate personalized improvement suggestion
-    if matched:
-        strength_skills = ', '.join(matched[:3])
-        suggestion = f"Great match! Your expertise in {strength_skills} aligns well with this role. "
-    else:
-        strength_skills = ', '.join(user_skills[:2])
-        suggestion = f"You have a solid foundation with {strength_skills}. "
+    # Step 4: ACTION - Generate personalized improvement suggestion using FREE Gemini AI
+    print("Generating improvement suggestion...")
     
-    if missing and missing[0] != "No critical gaps identified":
-        top_missing = ', '.join(missing[:3])
-        suggestion += f"To strengthen your application, consider developing skills in {top_missing}. "
-        suggestion += "Focus on hands-on projects or certifications in these areas to stand out."
-    else:
-        suggestion += "Your skill set is comprehensive for this position. Highlight relevant project experience in your application."
+    # Try to use Gemini AI first (FREE)
+    suggestion = generate_gemini_improvement_suggestion(
+        user_skills=user_skills,
+        matched_skills=matched_final,
+        missing_skills=missing_final,
+        job_title=job_title
+    )
+    
+    # Fallback to rule-based suggestion if Gemini fails
+    if not suggestion:
+        print("Using fallback rule-based suggestion")
+        if matched:
+            strength_skills = ', '.join(matched[:3])
+            suggestion = f"Great match! Your expertise in {strength_skills} aligns well with this role. "
+        else:
+            strength_skills = ', '.join(user_skills[:2]) if len(user_skills) >= 2 else "your skills"
+            suggestion = f"You have a solid foundation with {strength_skills}. "
+        
+        if missing and missing[0] != "No critical gaps identified":
+            top_missing = ', '.join(missing[:3])
+            suggestion += f"To strengthen your application, consider developing skills in {top_missing}. "
+            suggestion += "Focus on hands-on projects or certifications in these areas to stand out."
+        else:
+            suggestion += "Your skill set is comprehensive for this position. Highlight relevant project experience in your application."
     
     print(f"✓ Analysis complete: {len(matched_final)} matched, {len(missing_final)} to develop")
     

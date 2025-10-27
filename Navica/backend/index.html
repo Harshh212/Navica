@@ -319,7 +319,37 @@
             <p style="color: #666; margin-bottom: 20px;">Choose one or more roles you're interested in:</p>
             <div class="roles-grid" id="rolesGrid"></div>
             
-            <button id="searchBtn" disabled>Search Jobs</button>
+            <!-- NEW: Experience level and Work model filters -->
+            <div style="margin-top:20px; display:flex; gap:12px; align-items:center;">
+                <div style="flex:1">
+                    <label style="font-weight:600; display:block; margin-bottom:8px; color:#333;">Experience level</label>
+                    <select id="experienceLevel" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e0e0e0;">
+                        <option value="" disabled selected>Select experience level</option>
+                        <option value="1 to 2">1 to 2 years</option>
+                        <option value="3 to 4">3 to 4 years</option>
+                        <option value="above 5">Above 5 years</option>
+                    </select>
+                    <small style="color:#666; display:block; margin-top:6px;">Choose your seniority to tailor job matches.</small>
+                </div>
+                <div style="flex:1">
+                    <label style="font-weight:600; display:block; margin-bottom:8px; color:#333;">Work model</label>
+                    <select id="workModel" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e0e0e0;">
+                        <option value="" disabled selected>Select work model</option>
+                        <option value="Remote">Remote</option>
+                        <option value="Onsite">Onsite</option>
+                        <option value="Hybrid">Hybrid</option>
+                    </select>
+                    <small style="color:#666; display:block; margin-top:6px;">Filter by remote / onsite / hybrid opportunities.</small>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:12px;">
+                <div id="selectedSummary" style="color:#333; font-weight:600;">No roles selected</div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button id="clearRolesBtn" style="background:#f3f4f6; color:#333; padding:8px 12px; border-radius:8px; border:1px solid #e5e7eb;">Clear</button>
+                    <button id="searchBtn" disabled>Search Jobs</button>
+                </div>
+            </div>
         </div>
         
         <!-- Step 3: View Results -->
@@ -446,13 +476,36 @@
             document.querySelectorAll('.role-checkbox').forEach(checkbox => {
                 checkbox.addEventListener('change', updateSelectedRoles);
             });
+            // Update summary initially
+            updateSelectedRoles();
         }
         
         function updateSelectedRoles() {
             selectedRoles = Array.from(document.querySelectorAll('.role-checkbox:checked'))
                 .map(cb => cb.value);
-            document.getElementById('searchBtn').disabled = selectedRoles.length === 0;
+            const summary = document.getElementById('selectedSummary');
+            if (selectedRoles.length === 0) {
+                summary.textContent = 'No roles selected';
+            } else {
+                summary.textContent = `${selectedRoles.length} role(s) selected: ${selectedRoles.join(', ')}`;
+            }
+
+            // Enable search only if roles selected AND experience/work model chosen
+            const exp = document.getElementById('experienceLevel').value;
+            const work = document.getElementById('workModel').value;
+            document.getElementById('searchBtn').disabled = !(selectedRoles.length > 0 && exp && work);
         }
+
+        // Clear selected roles button
+        document.getElementById('clearRolesBtn').addEventListener('click', () => {
+            document.querySelectorAll('.role-checkbox').forEach(cb => cb.checked = false);
+            selectedRoles = [];
+            updateSelectedRoles();
+        });
+
+        // Enable/disable search when experience or work model changes
+        document.getElementById('experienceLevel').addEventListener('change', () => updateSelectedRoles());
+        document.getElementById('workModel').addEventListener('change', () => updateSelectedRoles());
         
         document.getElementById('searchBtn').addEventListener('click', async () => {
             if (selectedRoles.length === 0) return;
@@ -462,6 +515,10 @@
             goToStep(3);
             
             try {
+                // Read the new filters from the UI
+                const experienceLevel = document.getElementById('experienceLevel').value;
+                const workModel = document.getElementById('workModel').value;
+
                 const response = await fetch(`${API_URL}/api/v1/search_and_analyze`, {
                     method: 'POST',
                     headers: {
@@ -469,7 +526,9 @@
                     },
                     body: JSON.stringify({
                         user_skills: extractedSkills,
-                        selected_roles: selectedRoles
+                        selected_roles: selectedRoles,
+                        experience_level: experienceLevel,
+                        work_model: workModel
                     })
                 });
                 

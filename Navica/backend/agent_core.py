@@ -6,53 +6,102 @@ from models import JobPosting, SkillAnalysis
 import os
 import google.generativeai as genai
 
-def fetch_jobs_with_jobspy(user_skills: list[str], selected_roles: list[str]) -> list[JobPosting]:
-    """
-    Step 4: Scrapes multiple job sites for free using the JobSpy library.
-    Prioritizes reliable and free job board sources like Indeed and Google.
-    """
-    # 1. Combine roles and skills into a search term for maximum relevance
-    # Example: "Software Engineer OR Backend Developer AND Python OR Django"
-    roles_query = " OR ".join(selected_roles)
-    skills_query = " OR ".join(user_skills)
-    search_term = f"({roles_query}) AND ({skills_query})"
-    # 2. Define the job sites to scrape (removed zip_recruiter due to rate limiting)
+import re
+
+def fetch_jobs_with_jobspy(
+    user_skills: list[str],
+    selected_roles: list[str],
+    experience_level: str,
+    work_model: str
+) -> list[JobPosting]:
+    
+    # --- 1. Simplified Filter Mapping and Search Term Build ---
+    is_remote_flag = (work_model or "").strip().lower() == "remote"
+
+    # Define simple experience keywords for the initial search term
+    # NOTE: Keep the initial search broad to maximize discovery
+    roles_query = " OR ".join(selected_roles) if selected_roles else ""
+    skills_query = " OR ".join(user_skills) if user_skills else ""
+    
+    # Combine roles and skills only, remove the experience keywords from the main query
+    search_term = ""
+    if roles_query and skills_query:
+        search_term = f"({roles_query}) AND ({skills_query})"
+    elif roles_query:
+        search_term = roles_query
+    elif skills_query:
+        search_term = skills_query
+    
+    # --- 2. Define Strict Filtering Criteria (Regex) ---
+    # Convert human-readable experience into a precise regex filter
+    # This filter will be applied to the 'description' and 'title' columns.
+    
+    strict_filters = {
+        "1 to 2": r"\b(junior|entry[- ]level|0-2 years|1-3 years experience)\b",
+        "3 to 4": r"\b(mid[- ]level|associate|3-5 years experience)\b",
+        "above 5": r"\b(senior|lead|principal|staff|5\+ years|8\+ years experience)\b"
+    }
+    
+    # Get the regex for the user's selected experience
+    user_regex = strict_filters.get((experience_level or "").lower().strip(), None)
+
+    # --- 3. JobSpy Call (No Change to this block) ---
     job_sites = ["indeed", "google"]
+    RESULTS_WANTED = 25 # Increase results wanted to filter down to 5 relevant ones
+    
     try:
-        # 3. Call the JobSpy scraper (synchronous)
         jobs_df = scrape_jobs(
             site_name=job_sites,
-            search_term=search_term,
-            location = "India",
+            search_term=search_term, # Use the simpler search_term here
+            location="India",
             country_indeed="India",
-            results_wanted=5,
-            hours_old=72, # Filter to jobs posted in the last 72 hours
+            is_remote=is_remote_flag,
+            results_wanted=RESULTS_WANTED, # Get more results to ensure filtering yields 5
+            hours_old=72,
         )
     except Exception as e:
         print(f"JobSpy scraping failed: {e}")
         return []
-    job_postings = []
+
+    # --- 4. Strict Pandas Post-Filtering ---
     if jobs_df is not None and not jobs_df.empty:
-        # Convert the Pandas DataFrame rows to your Pydantic JobPosting model
-        for _, row in jobs_df.iterrows():
-            # Handle NaN values from pandas DataFrame
-            def safe_get(key, default="N/A"):
-                value = row.get(key, default)
-                # Check if value is NaN (pandas uses float('nan'))
-                if pd.isna(value):
-                    return default
-                return str(value) if value else default
+        # Step 4a: Apply the strict experience filter using regex on the description/title
+        if user_regex and jobs_df.get('description') is not None:
+            # Create a mask where either title or description contains the regex pattern
+            title_match = jobs_df['title'].astype(str).str.contains(user_regex, case=False, regex=True, na=False)
+            desc_match = jobs_df['description'].astype(str).str.contains(user_regex, case=False, regex=True, na=False)
             
+            jobs_df = jobs_df[title_match | desc_match]
+
+        # Step 4b: Trim the filtered DataFrame to the required 5 results
+        jobs_df = jobs_df.head(5)
+
+        # --- 5. Final Pydantic Conversion ---
+        job_postings: list[JobPosting] = []
+        for _, row in jobs_df.iterrows():
+            # ... (safe_get and JobPosting append logic remains the same)
+            # You should use the safe_get logic you defined previously here:
+            
+            def safe_get(key, default="N/A"):
+                 value = row.get(key, default)
+                 if pd.isna(value):
+                     return default
+                 return str(value) if value else default
+
             job_id = safe_get("job_url", "").split('/')[-1] or f"{row.get('site')}_{str(_)}"
             job_postings.append(JobPosting(
-                job_id=job_id,
-                title=safe_get("title"),
-                company=safe_get("company"),
-                location=safe_get("location"),
-                job_description=safe_get("description", "No description available."), 
-                external_url=safe_get("job_url", "")
+                 job_id=job_id,
+                 title=safe_get("title"),
+                 company=safe_get("company"),
+                 location=safe_get("location"),
+                 job_description=safe_get("description", "No description available."),
+                 external_url=safe_get("job_url", "")
             ))
-    return job_postings
+            
+        return job_postings
+    
+    return []
+
 async def _get_filtered_mock_jobs(roles: List[str]) -> List[JobPosting]:
     """
     Returns mock job data filtered by selected roles.

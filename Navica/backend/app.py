@@ -207,13 +207,15 @@ async def search_and_analyze(params: JobSearchParams):
             )
         
         # Step 4: Fetch jobs using JobSpy (synchronous, run in thread)
-        logger.info("Fetching jobs using JobSpy...")
+        logger.info("Fetching jobs using JobSpy with filters: experience_level=%s, work_model=%s", params.experience_level, params.work_model)
         loop = asyncio.get_event_loop()
         job_postings = await loop.run_in_executor(
             None,
             fetch_jobs_with_jobspy,
             params.user_skills,
-            params.selected_roles
+            params.selected_roles,
+            params.experience_level,
+            params.work_model
         )
         
         logger.info(f"Retrieved {len(job_postings)} job postings")

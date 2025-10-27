@@ -34,6 +34,15 @@ class JobSearchParams(BaseModel):
         ..., 
         description="List of roles selected by the user"
     )
+    # NEW FIELDS: allow the frontend to pass user filters for experience and work model
+    experience_level: str = Field(
+        ..., 
+        description="Desired experience level (e.g. '1 to 2', '3 to 4', 'above 5')"
+    )
+    work_model: str = Field(
+        ..., 
+        description="Preferred work model (Remote, Onsite, Hybrid)"
+    )
 
 
 class SkillAnalysis(BaseModel):
